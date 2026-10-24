@@ -218,4 +218,57 @@ Instance.new("UICorner", SliderBg).CornerRadius = UDim.new(1, 0)
 
 local SliderFill = Instance.new("Frame", SliderBg)
 SliderFill.Size = UDim2.new(0.35, 0, 1, 0); SliderFill.BackgroundColor3 = AccentColor; SliderFill.BorderSizePixel = 0
-Instance.new("UICorner", SliderFill).Cor
+Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+
+local sliding = false
+SliderBg.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = true end end)
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then sliding = false end end)
+UserInputService.InputChanged:Connect(function(input)
+    if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local posX = math.clamp(input.Position.X - SliderBg.AbsolutePosition.X, 0, SliderBg.AbsoluteSize.X)
+        local percent = posX / SliderBg.AbsoluteSize.X
+        SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        CONFIG.TP_SPEED = 1 + (percent * 5)
+        SpeedLabel.Text = string.format("TP Speed: %.1fs", CONFIG.TP_SPEED)
+    end
+end)
+
+local function criarConfigBtn(txt, posY, callback)
+    local b = Instance.new("TextButton", TabConfig)
+    b.Size = UDim2.new(1, 0, 0, 40); b.Position = UDim2.new(0, 0, 0, posY)
+    b.BackgroundColor3 = Color3.fromRGB(30, 30, 35); b.Text = txt; b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.Font = Enum.Font.GothamBold; b.TextSize = 13; b.BorderSizePixel = 0
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    b.MouseButton1Click:Connect(callback); return b
+end
+
+local function MudarCor(cor)
+    AccentColor = cor
+    TweenService:Create(BannerGradient, TweenInfo.new(0.5), {Color = ColorSequence.new{ColorSequenceKeypoint.new(0, AccentColor), ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 0, 255))}}):Play()
+    if not running then TweenService:Create(ToggleBtn, TweenInfo.new(0.3), {BackgroundColor3 = AccentColor}):Play() end
+    TweenService:Create(SliderFill, TweenInfo.new(0.3), {BackgroundColor3 = AccentColor}):Play()
+    TweenService:Create(TglStroke, TweenInfo.new(0.3), {Color = AccentColor}):Play()
+end
+
+criarConfigBtn("Neon Orange (Default)", 10, function() MudarCor(Color3.fromRGB(255, 120, 0)) end)
+criarConfigBtn("Neon Purple", 60, function() MudarCor(Color3.fromRGB(180, 50, 255)) end)
+criarConfigBtn("Neon Cyan", 110, function() MudarCor(Color3.fromRGB(0, 255, 255)) end)
+criarConfigBtn("Neon Green", 160, function() MudarCor(Color3.fromRGB(0, 255, 100)) end)
+criarConfigBtn("Neon Red", 210, function() MudarCor(Color3.fromRGB(255, 40, 40)) end)
+
+local tabs, tabScreens = {main = TabMainBtn, config = TabConfigBtn}, {main = TabMain, config = TabConfig}
+local function MudarAba(id)
+    currentTab = id
+    for k, tela in pairs(tabScreens) do
+        local targetX = (k == id) and 0 or ((k == "main" and id == "config") and -1 or 1)
+        TweenService:Create(tela, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(targetX, 0, 0, 0)}):Play()
+    end
+    for k, btn in pairs(tabs) do
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundColor3 = (k == id) and Color3.fromRGB(45, 45, 55) or Color3.fromRGB(25, 25, 30),
+            TextColor3 = (k == id) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 150, 160)
+        }):Play()
+    end
+end
+TabMainBtn.MouseButton1Click:Connect(function() MudarAba("main") end)
+TabConfigBtn.MouseButton1Click:Connect(function() MudarAba("config") end)
